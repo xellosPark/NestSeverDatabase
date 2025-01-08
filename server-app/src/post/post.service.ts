@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,6 +18,9 @@ export class PostService {
     // getPosts(){
     //     return ['a게시글', 'b게시클']
     // }
+    
+
+    // 전체 10씩 받아오기
     // http://localhost:3030/posts?page=1
     getPosts(page: number) {
         // 한 페이지에 표시할 데이터 수를 설정합니다.
@@ -50,6 +53,24 @@ export class PostService {
         // 예시:
         // const posts = await this.getPosts(1).getMany();
         // console.log(posts); // Post 엔터티 배열이 출력됩니다.
+    }
+    // localhost:3030/posts/1
+    async getPostById(id: number){
+        try {
+            const foundPost = await this.postRepository
+            .createQueryBuilder('post')
+            .where('post.id = :id', { id })
+            .getOne();
+
+            if (!foundPost) {
+                throw new NotFoundException('존재하지 않는 피드입니다.');
+            }
+
+            return foundPost
+        }catch (error) {
+            console.log(error);
+            throw new InternalServerErrorException('추가하는 도중에 에러가 발생했습니다.');
+        }
     }
 
     //http://localhost:3030/posts
@@ -88,4 +109,6 @@ export class PostService {
 
          return post;
     }
+
+    
 }
