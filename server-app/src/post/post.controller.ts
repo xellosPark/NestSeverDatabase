@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 
@@ -18,8 +18,9 @@ export class PostController {
 // 값이 유효한 숫자인지 검증해야 할 때.
 // 추가적인 파이프를 정의하거나 사용할 수도 있으며, NestJS에서는 이를 확장하거나 커스터마이징할 수 있습니다.
 
+    // 데이터 1씩 받아오기
     @Get('/posts/:id')
-    getPostById(@Param('id', ParseIntPipe) id: number){
+    getPostById(@Param('id', ParseIntPipe) id: number){  //
         return this.postService.getPostById(id);
     }
 
@@ -33,5 +34,10 @@ export class PostController {
     @Post('/posts')
     createPost(@Body() createPostDto: CreatePostDto ){
         return this.postService.createPost(createPostDto);
+    }
+
+    @Delete('/posts/:id')
+    deletePost(@Param('id', ParseIntPipe) id: number){  //
+        return this.postService.deletePost(id);
     }
 }

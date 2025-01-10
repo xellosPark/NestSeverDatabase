@@ -9,36 +9,34 @@ export class PostService {
     // DB 저장하기위해서 constructor
 
     constructor(
-       // 데코레이터는 TypeORM의 Repository 객체를 의존성 주입(DI, Dependency Injection)을 통해 사용할 수 있도록 합니다.
-       // NestJS에서 데이터베이스와 상호작용하기 위해 레포지토리를 쉽게 사용할 수 있게 합니다.
-        @InjectRepository(Post) 
+        // 데코레이터는 TypeORM의 Repository 객체를 의존성 주입(DI, Dependency Injection)을 통해 사용할 수 있도록 합니다.
+        // NestJS에서 데이터베이스와 상호작용하기 위해 레포지토리를 쉽게 사용할 수 있게 합니다.
+        @InjectRepository(Post)
         private postRepository: Repository<Post>,
-    ){}
+    ) { }
 
     // getPosts(){
     //     return ['a게시글', 'b게시클']
     // }
-    
-
-    // 전체 10씩 받아오기
+    // GET
     // http://localhost:3030/posts?page=1
     getPosts(page: number) {
         // 한 페이지에 표시할 데이터 수를 설정합니다.
         const perPage = 10;
-    
+
         // 가져올 데이터의 시작 위치(offset)를 계산합니다.
         // 예:
         // - 1페이지: offset = (1 - 1) * 10 = 0
         // - 2페이지: offset = (2 - 1) * 10 = 10
         // - 3페이지: offset = (3 - 1) * 10 = 20
         const offset = (page - 1) * perPage;
-    
+
         // QueryBuilder를 사용하여 데이터 쿼리를 생성합니다.
         return this.postRepository
-            .createQueryBuilder('post') // 'post'는 이 쿼리의 엔터티에 대한 별칭입니다.
-            .orderBy('post.date', 'DESC') // 'post.date'를 기준으로 내림차순 정렬 (최신 데이터가 먼저)
-            .take(perPage) // 가져올 데이터의 최대 개수 (여기서는 10개)
-            .skip(offset) // 지정된 offset 위치부터 데이터를 가져옴
+            .createQueryBuilder('post')     // 'post'는 이 쿼리의 엔터티에 대한 별칭입니다.
+            .orderBy('post.date', 'DESC')   // 'post.date'를 기준으로 내림차순 정렬 (최신 데이터가 먼저)
+            .take(perPage)                  // 가져올 데이터의 최대 개수 (여기서는 10개)
+            .skip(offset)                   // 지정된 offset 위치부터 데이터를 가져옴
             .getMany();
 
         // .getMany()는 QueryBuilder가 생성한 SQL 쿼리를 실행하고,
@@ -54,25 +52,7 @@ export class PostService {
         // const posts = await this.getPosts(1).getMany();
         // console.log(posts); // Post 엔터티 배열이 출력됩니다.
     }
-    // localhost:3030/posts/1
-    async getPostById(id: number){
-        try {
-            const foundPost = await this.postRepository
-            .createQueryBuilder('post')
-            .where('post.id = :id', { id })
-            .getOne();
-
-            if (!foundPost) {
-                throw new NotFoundException('존재하지 않는 피드입니다.');
-            }
-
-            return foundPost
-        }catch (error) {
-            console.log(error);
-            throw new InternalServerErrorException('추가하는 도중에 에러가 발생했습니다.');
-        }
-    }
-
+    //POST
     //http://localhost:3030/posts
     // {
     //     "latitude":123.1111, 
@@ -85,30 +65,72 @@ export class PostService {
     //     "score": 5,
     //     "imageUris":[]
     // }
-    async createPost( createPostDto : CreatePostDto){
-        const { latitude, longitude, color, address, title, description, date, score, imageUris,} = createPostDto;
+    async createPost(createPostDto: CreatePostDto) {
+        const { latitude, longitude, color, address, title, description, date, score, imageUris, } = createPostDto;
 
-        const post = this.postRepository.create({ 
-            latitude,
-            longitude,
-            color,
-            address,
-            title,
-            description,
-            date,
-            score,
-            
-         })
+        const post = this.postRepository.create({ latitude, longitude, color, address, title, description, date, score, })
 
-         try{
+        try {
             await this.postRepository.save(post)
-         } catch (error) {
+        } catch (error) {
             console.log(error);
             throw new InternalServerErrorException('추가하는 도중에 에러가 발생했습니다.');
-         }
+        }
 
-         return post;
+        return post;
     }
 
-    
+    // GET
+    // http://localhost:3030/posts/1
+    // {
+    //     "id": 1,
+    //     "latitude": 123.1111,
+    //     "longitude": 22.1111,
+    //     "color": "RED",
+    //     "address": "서울시",
+    //     "title": "해바라기 식당",
+    //     "description": "소프트웨어 맛집",
+    //     "date": "2024-03-29T16:56:40.386Z",
+    //     "score": 5,
+    //     "createdAt": "2025-01-08T08:19:53.682Z",
+    //     "updateAt": "2025-01-08T08:19:53.682Z",
+    //     "deletedAt": null
+    // }
+    async getPostById(id: number) {
+        try {
+            const founPost = await this.postRepository
+                .createQueryBuilder('post')
+                .where('post.id = :id', { id })
+                .getOne();
+
+            if (!founPost) {
+                throw new NotFoundException('존재하지 않는 피디입니다.');
+            }
+            return founPost;
+
+        } catch (error) {
+            console.log(error);
+            throw new InternalServerErrorException('개별 데이터를 갖져오는 도중에 에러가 발생했습니다.');
+        }
+    }
+
+    async deletePost(id: number) {
+        try {
+            const result = await this.postRepository
+                .createQueryBuilder('post')
+                .delete()
+                .from(Post)
+                .where(' id = :id', { id })
+                .execute();
+
+            if (result.affected === 0) {
+                throw new NotFoundException('존재하지 않는 피드입니다.');
+            }
+
+            return id;
+        } catch (error) {
+            console.log(error);
+            throw new InternalServerErrorException('삭제 도중에 에러가 발생했습니다.');
+        };
+    }
 }
