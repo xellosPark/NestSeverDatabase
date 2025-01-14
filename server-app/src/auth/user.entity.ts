@@ -17,20 +17,20 @@ id: number;
 /**
  * 사용자 이름
  */
-@Column({ length: 50 })
+@Column({ length: 50,  nullable: true })
 name: string;
 
 /**
  * 사용자 이메일
  * - 고유값
  */
-@Column({ unique: true })
+@Column()
 email: string;
 
 /**
  * 사용자 전화번호
  */
-@Column({ length: 11 })
+@Column({ length: 11, default: '01000000000' })
 phoneNumber: string;
 
 /**
@@ -65,7 +65,7 @@ createdAt: Date;
  * - TypeORM에서 자동으로 관리
  */
 @UpdateDateColumn()
-updatedAt: Date;
+updatedAt: Date ;
 
 /**
  * 삭제 날짜
