@@ -20,4 +20,6 @@ import * as bcrypt from 'bcryptjs';
 
 npm install @nestjs/jwt @nestjs/config
 npm install passport passport-jwt @nestjs/passport
+npm i --save-dev @types/passport-jwt
 
+npm install @nestjs/passport passport passport-jwt
