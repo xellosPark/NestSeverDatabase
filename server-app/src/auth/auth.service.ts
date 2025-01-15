@@ -16,6 +16,7 @@ export class AuthService {
         private jwtService: JwtService,
         private configService: ConfigService,
     ){}
+
     // 실패 예제
     // POST localhost:3030/auth/signup
     // Body raw
@@ -141,5 +142,27 @@ export class AuthService {
         } else {
             throw new UnauthorizedException('이메일 또는 비밀번호가 일치하지 않습니다.');
         }
+    }
+
+    // 실패 예제
+    // POST localhost:3030/auth/refresh
+    // tructure property 'email' of 'user' as it is undefined.
+    // Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIyIiwic3ViIjoyLCJpYXQiOjE3MjUyNTc5NDIsImV4cCI6MTcyNTI2MTU0Mn0.rI_4YeGDKVwnbhO9buvfiA9eJz5SzmdwUTlky7mUznk
+    // {
+    //   "statusCode": 500,
+    //    "message": "Internal server error"
+    //}
+
+    // jwt.strategy.ts 전략 파일
+    // 전략에서는 JWT의 페이로드에 포함된 사용자 정보를 바탕으로 데이터베이스에서 사용자를 조회합니다.
+
+    // 성공 예제
+    
+    async refreshToken( user: User ){
+        // user 정보는 client에서 가져와야한다.
+        console.log( 'user' );
+        const { email } = user;
+
+        const { accessToken , refreshToken} = await this.getTokens( email )
     }
 }

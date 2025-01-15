@@ -18,3 +18,6 @@ npm install class-transformer class-validator
 npm install bcryptjs --save  
 import * as bcrypt from 'bcryptjs';
 
+npm install @nestjs/jwt @nestjs/config
+npm install passport passport-jwt @nestjs/passport
+
