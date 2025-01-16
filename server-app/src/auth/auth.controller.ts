@@ -22,7 +22,7 @@ export class AuthController {
     
     @Get('/refresh')
     //사용자 정의 파라미터 데코레이터 사용 @GetUser()
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard())
     refresh(@GetUser() user: User){
         return this.authService.refreshToken(user);
     }

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -10,6 +10,9 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
+
+    private activeEmail: string | null = null; // 단일 이메일 저장
+
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
@@ -135,6 +138,12 @@ export class AuthService {
             // 콘솔 로그 추가
             console.log('accessToken  login for user:', accessToken);
             console.log('refreshToken login for user:', refreshToken);
+
+             // 이메일 저장
+             this.activeEmail = email;
+             console.log('Active email:', this.activeEmail);
+
+            await this.updateHashedRefreshToken(user.id, refreshToken);
             
             // client에 보낸다.
             return { accessToken, refreshToken };
@@ -145,7 +154,7 @@ export class AuthService {
     }
 
     // 실패 예제
-    // POST localhost:3030/auth/refresh
+    // GET localhost:3030/auth/refresh
     // tructure property 'email' of 'user' as it is undefined.
     // Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIyIiwic3ViIjoyLCJpYXQiOjE3MjUyNTc5NDIsImV4cCI6MTcyNTI2MTU0Mn0.rI_4YeGDKVwnbhO9buvfiA9eJz5SzmdwUTlky7mUznk
     // {
@@ -157,13 +166,43 @@ export class AuthService {
     // 전략에서는 JWT의 페이로드에 포함된 사용자 정보를 바탕으로 데이터베이스에서 사용자를 조회합니다.
 
     // 성공 예제
+
+    private async updateHashedRefreshToken(id: number, refreshToken:string){
+
+        const salt = await bcrypt.genSalt();
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
+
+        // console.log("Original Refresh Token:", refreshToken);
+
+        try {
+            await this.userRepository.update(id, {hashedRefreshToken})
+        } catch (error){
+            console.log(error);
+            throw new InternalServerErrorException('회원가입 도중 에러가 발생했습니다.');
+        }
+    }
     
     async refreshToken( user: User ){
         // user 정보는 client에서 가져와야한다.
-        console.log( 'user' );
+        // console.log( 'user' );
         const { email } = user;
 
-        const { accessToken , refreshToken} = await this.getTokens( email )
+             // 저장된 이메일과 요청 이메일 비교
+        if (this.activeEmail !== email) {
+            console.error(`이메일 불일치: 저장된 이메일(${this.activeEmail}), 요청된 이메일(${email})`);
+            throw new ForbiddenException('이메일이 일치하지 않아 인증에 실패했습니다.');
+        }
+            
+        const { accessToken , refreshToken} = await this.getTokens( email );
+
+        console.log("User email:", email);
+
+        if(!user.hashedRefreshToken){
+            throw new ForbiddenException('Invalid refresh token');
+        }
+
+        // user.hashedRefreshToken은 사용자가 발급받은 Refresh Token을 해싱한 값으로, 보안성을 유지하면서 토큰 검증 과정을 지원합니다.
+        await this.updateHashedRefreshToken(user.id, refreshToken);
 
         return { accessToken , refreshToken };
     }
